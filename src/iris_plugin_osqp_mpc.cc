@@ -35,6 +35,7 @@
 #include "osqp.h"
 #include "workspace.h" 
 #include "interface_osqp_ros_mpc.h"
+#include "matrices_mpc.h"
 
 namespace gazebo
 {
@@ -51,21 +52,22 @@ namespace gazebo
     {
 
    	// Just output a message for now
-    	std::cerr << "\nThe iris plugin is attach to model" << _model->GetName() << "\n";
+    std::cerr << "\nThe iris plugin is attach to model" << _model->GetName() << "\n";
 
 	// Solve Problem
 	osqp_solve(&workspace);
 	
 
+	//std::cout << E[0][0] <<  "\n";
 	// Print test osqp
-	/*std::cout << "Status: " << (&workspace)->info->status <<  "\n";
-	std::cout << "Number of iterations: " << (int)((&workspace)->info->iter) <<  "\n";
-	for (int i = 0; i < 12; i++){
+	//std::cout << "Status: " << (&workspace)->info->status <<  "\n";
+	//std::cout << "Number of iterations: " << (int)((&workspace)->info->iter) <<  "\n";
+	/*for (int i = 0; i < 12; i++){
 		std::cout << Pdata_x[i] << "\n";
 	}*/
 
-	double hue = (&workspace)->solution->x[0] ;
-	std::cout << hue << "\n\n";
+	/*double hue = (&workspace)->solution->x[0] ;
+	std::cout << hue << "\n\n";*/
 	std::cout << "test askaskaskkaskaskas \n\n";
 	c_int flag_bounds = osqp_update_bounds(&workspace, ldata, udata);
 
@@ -402,7 +404,10 @@ namespace gazebo
 		//Update control array state
 		this->state_array_explicit_mpc();
 
-		update_OSQP_vectors(this->control_state_array, 16, 4, &workspace);
+
+		update_OSQP_vectors(this->control_state_array, W, E, FT, 16, 4, &workspace);
+
+		//update_OSQP_vectors(this->control_state_array, 16, 4, &workspace);
 
 		calculate_control_OSQP(this->delta_control_action, this->control_state_array, 16, 4, &workspace);
 

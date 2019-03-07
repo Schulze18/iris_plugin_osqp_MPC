@@ -4,9 +4,9 @@
 #include "matrix_drque.h"
 #include <iostream>
 
-void update_OSQP_vectors(double state[], std::size_t number_states, std::size_t number_controls_actions, OSQPWorkspace *workspace){
-
-	double F_t_new[] = {0.0420,    0.0033,         0,         0,         0,         0,         0,         0,    0.0011,  0, 0,  0,   -0.0420, 0, 0, 0,
+void update_OSQP_vectors(double state[], double* W_temp, double* E_temp, double* FT_temp, std::size_t number_states, std::size_t number_controls_actions, OSQPWorkspace *workspace){
+//void update_OSQP_vectors(double state[], double* W_temp, E_tp (&E_temp)[N][M], E_tp (&FT_temp)[K][J], std::size_t number_states, std::size_t number_controls_actions, OSQPWorkspace *workspace){
+	/*double F_t_new[] = {0.0420,    0.0033,         0,         0,         0,         0,         0,         0,    0.0011,  0, 0,  0,   -0.0420, 0, 0, 0,
          0,         0,    0.0967,    0.0076,   0,     0,   0,   0,        0,    0.0355,         0,  0,         0,   -0.0967,         0,         0,
          0,         0,         0,         0,    0.1731,    0.0136,         0,         0,         0,         0,   0.0712,  0,         0,         0,   -0.1731,         0,
          0,         0,         0,         0,         0,         0,    0.0315,    0.0025,         0,         0,  0,  0.0514,         0,         0,         0,   -0.0315,
@@ -39,11 +39,7 @@ void update_OSQP_vectors(double state[], std::size_t number_states, std::size_t 
 	c_float u_new[2] = {
 		(c_float)(26.87940000000000400000 - state[7]),
 		(c_float)(26.87940000000000400000 - state[7]),
-	};*/
-
-	Matrix <double> Ft(number_controls_actions*2,number_states);
-	Ft = F_t_new;
-
+	};
 	Matrix <double> control_state(number_states,1);
 	control_state = state; 
 
@@ -58,6 +54,37 @@ void update_OSQP_vectors(double state[], std::size_t number_states, std::size_t 
 
 	c_int flag_bounds = osqp_update_bounds(workspace, l_new, u_new);
 	c_int flag_cost = osqp_update_lin_cost(workspace, q_new_cfloat);
+	*/
+	Matrix <double> W(number_controls_actions*2*4, 1);
+	W = W_temp;
+
+	Matrix <double> E(number_controls_actions*2*4, number_states);
+	E = E_temp;
+
+	Matrix <double> Ft(number_controls_actions*2, number_states);
+	Ft = FT_temp;
+
+	Matrix <double> control_state(number_states,1);
+	control_state = state; 
+
+	Matrix <double> q_new_temp = Ft*control_state;
+
+	Matrix <double> u_new_product = E*control_state;
+	Matrix <double> u_new_temp = W + u_new_product;
+
+	double q_new[number_controls_actions*2];
+	for (int i = 0; i < number_controls_actions*2; i++){
+		q_new[i] = q_new_temp.get(i,0);
+	}
+	
+	double u_new[number_controls_actions*2*4];
+	for (int i = 0; i < number_controls_actions*2*4; i++){
+		u_new[i] = u_new_temp.get(i,0);
+	}
+
+
+	c_int flag_bounds = osqp_update_upper_bound(workspace, u_new);
+	c_int flag_cost = osqp_update_lin_cost(workspace, q_new);
 
 }
 

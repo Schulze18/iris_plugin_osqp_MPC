@@ -81,6 +81,7 @@ CMakeFiles/iris_plugin_osqp_mpc.dir/src/interface_osqp_ros_mpc.cc.o: ../src/inte
 CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/constants.h
 CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/glob_opts.h
 CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/interface_osqp_ros_mpc.h
+CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/matrices_mpc.h
 CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/osqp.h
 CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/osqp_configure.h
 CMakeFiles/iris_plugin_osqp_mpc.dir/src/iris_plugin_osqp_mpc.cc.o: ../include/qdldl.h

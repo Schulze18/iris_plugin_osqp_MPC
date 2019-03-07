@@ -66,6 +66,7 @@ set(
     include/util.h
     include/workspace.h
     include/interface_osqp_ros_mpc.h
+    include/matrices_mpc.h
 )
 
 

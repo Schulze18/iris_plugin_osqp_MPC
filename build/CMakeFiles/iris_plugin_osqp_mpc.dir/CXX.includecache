@@ -34,6 +34,8 @@ types.h
 iostream
 -
 
+../include/matrices_mpc.h
+
 ../include/matrix_drque.h
 iostream
 -
@@ -163,6 +165,8 @@ workspace.h
 /home/schulze/iris_plugin_osqp_MPC/src/workspace.h
 interface_osqp_ros_mpc.h
 /home/schulze/iris_plugin_osqp_MPC/src/interface_osqp_ros_mpc.h
+matrices_mpc.h
+/home/schulze/iris_plugin_osqp_MPC/src/matrices_mpc.h
 
 /opt/ros/kinetic/include/boost_161_condition_variable.h
 boost/thread/detail/platform.hpp
