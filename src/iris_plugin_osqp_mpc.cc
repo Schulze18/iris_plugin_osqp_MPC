@@ -54,6 +54,8 @@ namespace gazebo
    	// Just output a message for now
     std::cerr << "\nThe iris plugin is attach to model" << _model->GetName() << "\n";
 
+   // std::cerr << number_states << " " << number_control_actions << " " << number_opt_var << " " << number_ineq << "\n\n";
+
 	// Solve Problem
 	osqp_solve(&workspace);
 	
@@ -405,11 +407,16 @@ namespace gazebo
 		this->state_array_explicit_mpc();
 
 
-		update_OSQP_vectors(this->control_state_array, W, E, FT, 16, 4, &workspace);
+		//update_OSQP_vectors(this->control_state_array, W, E, FT, 16, 4, &workspace);
+
+		//update_OSQP_vectors(this->control_state_array, W, E, FT, 16, 4, 8, 32, &workspace);
+		update_OSQP_vectors(this->control_state_array, W, E, FT, number_control_states, number_control_actions, number_opt_var, number_ineq, &workspace);
 
 		//update_OSQP_vectors(this->control_state_array, 16, 4, &workspace);
 
-		calculate_control_OSQP(this->delta_control_action, this->control_state_array, 16, 4, &workspace);
+		//calculate_control_OSQP(this->delta_control_action, this->control_state_array, 16, 4, &workspace);
+		calculate_control_OSQP(this->delta_control_action, this->control_state_array, number_control_states, number_control_actions, &workspace);
+
 
 		this->control_action[0] = this->delta_control_action[0] + this->old_control_action[0];
 		this->control_action[1] = this->delta_control_action[1] + this->old_control_action[1];

@@ -4,7 +4,8 @@
 #include "matrix_drque.h"
 #include <iostream>
 
-void update_OSQP_vectors(double state[], double* W_temp, double* E_temp, double* FT_temp, std::size_t number_states, std::size_t number_controls_actions, OSQPWorkspace *workspace){
+void update_OSQP_vectors(double state[], double* W_temp, double* E_temp, double* FT_temp, std::size_t number_states, std::size_t number_controls_actions, std::size_t number_opt_var, std::size_t number_ineq, OSQPWorkspace *workspace){
+//void update_OSQP_vectors(double state[], double* W_temp, double* E_temp, double* FT_temp, std::size_t number_states, std::size_t number_controls_actions, OSQPWorkspace *workspace){
 //void update_OSQP_vectors(double state[], double* W_temp, E_tp (&E_temp)[N][M], E_tp (&FT_temp)[K][J], std::size_t number_states, std::size_t number_controls_actions, OSQPWorkspace *workspace){
 	/*double F_t_new[] = {0.0420,    0.0033,         0,         0,         0,         0,         0,         0,    0.0011,  0, 0,  0,   -0.0420, 0, 0, 0,
          0,         0,    0.0967,    0.0076,   0,     0,   0,   0,        0,    0.0355,         0,  0,         0,   -0.0967,         0,         0,
@@ -55,13 +56,17 @@ void update_OSQP_vectors(double state[], double* W_temp, double* E_temp, double*
 	c_int flag_bounds = osqp_update_bounds(workspace, l_new, u_new);
 	c_int flag_cost = osqp_update_lin_cost(workspace, q_new_cfloat);
 	*/
-	Matrix <double> W(number_controls_actions*2*4, 1);
+	
+	//Matrix <double> W(number_controls_actions*2*4, 1);
+	Matrix <double> W(number_ineq, 1);
 	W = W_temp;
 
-	Matrix <double> E(number_controls_actions*2*4, number_states);
+	//Matrix <double> E(number_controls_actions*2*4, number_states);
+	Matrix <double> E(number_ineq, number_states);
 	E = E_temp;
 
-	Matrix <double> Ft(number_controls_actions*2, number_states);
+	//Matrix <double> Ft(number_controls_actions*2, number_states);
+	Matrix <double> Ft(number_opt_var, number_states);
 	Ft = FT_temp;
 
 	Matrix <double> control_state(number_states,1);
@@ -72,13 +77,17 @@ void update_OSQP_vectors(double state[], double* W_temp, double* E_temp, double*
 	Matrix <double> u_new_product = E*control_state;
 	Matrix <double> u_new_temp = W + u_new_product;
 
-	double q_new[number_controls_actions*2];
-	for (int i = 0; i < number_controls_actions*2; i++){
+	//double q_new[number_controls_actions*2];
+	//for (int i = 0; i < number_controls_actions*2; i++){
+	double q_new[number_opt_var];
+	for (int i = 0; i < number_opt_var; i++){
 		q_new[i] = q_new_temp.get(i,0);
 	}
 	
-	double u_new[number_controls_actions*2*4];
-	for (int i = 0; i < number_controls_actions*2*4; i++){
+	//double u_new[number_controls_actions*2*4];
+	//for (int i = 0; i < number_controls_actions*2*4; i++){
+	double u_new[number_ineq];
+	for (int i = 0; i < number_ineq; i++){
 		u_new[i] = u_new_temp.get(i,0);
 	}
 
