@@ -8,7 +8,7 @@ extern "C" {
 /* Operative system */
 /* #undef IS_LINUX */
 /* #undef IS_MAC */
-#define IS_WINDOWS
+#define IS_LINUX
 
 /* EMBEDDED */
 #define EMBEDDED (1)

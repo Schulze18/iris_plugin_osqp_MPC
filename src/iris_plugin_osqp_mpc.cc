@@ -62,8 +62,8 @@ namespace gazebo
 
 	//std::cout << E[0][0] <<  "\n";
 	// Print test osqp
-	//std::cout << "Status: " << (&workspace)->info->status <<  "\n";
-	//std::cout << "Number of iterations: " << (int)((&workspace)->info->iter) <<  "\n";
+	std::cout << "Status: " << (&workspace)->info->status <<  "\n";
+	std::cout << "Number of iterations: " << (int)((&workspace)->info->iter) <<  "\n";
 	/*for (int i = 0; i < 12; i++){
 		std::cout << Pdata_x[i] << "\n";
 	}*/
@@ -185,6 +185,7 @@ namespace gazebo
 	// param[in] _msg A float value that is used to set the velocity of the Iris Rotors
 	public: void OnRosMsg(const geometry_msgs::PoseConstPtr& msg)
 	{
+		//this->flag_inicio = 0;
 		this->flag_inicio = 1;
 
 		/*this->iris_state_ref[0] = msg->x;
@@ -297,6 +298,10 @@ namespace gazebo
 		
 		// Create a variable to publish the state
 		sensor_msgs::Imu pub_iris_state;
+				
+
+		ros::Time time2 = ros::Time::now();
+		pub_iris_state.header.stamp = time2;
 
 		// Position data
 		pub_iris_state.orientation_covariance[0] = this->iris_state[0];
@@ -316,6 +321,7 @@ namespace gazebo
 		pub_iris_state.angular_velocity_covariance[3] = this->iris_state_vel[3];
 		pub_iris_state.angular_velocity_covariance[4] = this->iris_state_vel[4];
 		pub_iris_state.angular_velocity_covariance[5] = this->iris_state_vel[5];
+
 
 		geometry_msgs::Quaternion pub_vel_rotor;
 
