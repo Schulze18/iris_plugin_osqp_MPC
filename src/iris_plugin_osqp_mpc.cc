@@ -33,9 +33,10 @@
 //#include "/home/schulze/iris_plugin_osqp_MPC/include/osqp.h"  
 //#include "/home/schulze/iris_plugin_osqp_MPC/include/workspace.h"  
 #include "osqp.h"
-#include "workspace.h" 
+#include "workspace_10_2_u3_vt1.h" 
 #include "interface_osqp_ros_mpc.h"
-#include "matrices_mpc.h"
+//#include "matrices_mpc.h"
+#include "matrices_osqp_mpc_10_2_u3_vt1.h"
 
 namespace gazebo
 {
@@ -62,15 +63,15 @@ namespace gazebo
 
 	//std::cout << E[0][0] <<  "\n";
 	// Print test osqp
-	std::cout << "Status: " << (&workspace)->info->status <<  "\n";
-	std::cout << "Number of iterations: " << (int)((&workspace)->info->iter) <<  "\n";
+	//std::cout << "Status: " << (&workspace)->info->status <<  "\n";
+	//std::cout << "Number of iterations: " << (int)((&workspace)->info->iter) <<  "\n";
 	/*for (int i = 0; i < 12; i++){
 		std::cout << Pdata_x[i] << "\n";
 	}*/
 
 	/*double hue = (&workspace)->solution->x[0] ;
 	std::cout << hue << "\n\n";*/
-	std::cout << "test askaskaskkaskaskas \n\n";
+	std::cout << "test  \n\n";
 	c_int flag_bounds = osqp_update_bounds(&workspace, ldata, udata);
 
 	// Store the model pointer for convenience.
@@ -112,6 +113,8 @@ namespace gazebo
 	// Configure Timer and callback function
 	this->pubTimer = this->rosNode->createTimer(ros::Duration(0.01), &IrisPluginOSQPMPC::control_callback,this);
 	
+
+	std::cout << "test  2\n\n";
 	}
 
     // Update the velocity applied to the Rotors
@@ -127,7 +130,6 @@ namespace gazebo
 	
 	// Create 
 	math::Vector3 thrust_force;
-
 	//rotor_0 - Link 6
 	//rotor_1 - Link 5
 	//rotor_2 - Link 4
@@ -152,16 +154,16 @@ namespace gazebo
 
 	//Torque Application 
 	math::Vector3 angular_torque;
-	angular_torque.Set(0,0,-this->iris_KD*vel[0]*vel[0]);
+	angular_torque.Set(0,0,this->iris_KD*vel[0]*vel[0]);
 	this->model->GetLinks()[3]->AddRelativeTorque(angular_torque);
 	
-	angular_torque.Set(0,0,-this->iris_KD*vel[1]*vel[1]);
+	angular_torque.Set(0,0,this->iris_KD*vel[1]*vel[1]);
 	this->model->GetLinks()[4]->AddRelativeTorque(angular_torque);
 
-	angular_torque.Set(0,0,this->iris_KD*vel[2]*vel[2]);
+	angular_torque.Set(0,0,-this->iris_KD*vel[2]*vel[2]);
 	this->model->GetLinks()[5]->AddRelativeTorque(angular_torque);
 
-	angular_torque.Set(0,0,this->iris_KD*vel[3]*vel[3]);
+	angular_torque.Set(0,0,-this->iris_KD*vel[3]*vel[3]);
 	this->model->GetLinks()[6]->AddRelativeTorque(angular_torque);
 
 	//Set velocity
@@ -199,7 +201,7 @@ namespace gazebo
 		this->iris_state_ref[3] = msg->orientation.x;
 		this->iris_state_ref[4] = msg->orientation.y;
 		this->iris_state_ref[5] = msg->orientation.z;
-
+		std::cout << this->iris_state_ref[2] << " " << this->iris_state_ref[3] << " " << this->iris_state_ref[3] << " " << this->iris_state_ref[4] << "\n";
 	}
 
 	// ROS helper function that processes messages
@@ -265,6 +267,7 @@ namespace gazebo
 
 		// Apply the new velocities
 		this->UpdateVelocity();
+		this->delta_cpu_time = this->get_cpu_time() - time_cpu_ini;
 
 		// Publish the state and velocities to external analysis
 		this->pub_data();
@@ -288,7 +291,7 @@ namespace gazebo
 
 	//ros::Time time2 = ros::Time::now();
 	std::cout << (this->get_wall_time() - time_ini) << "\n";
-	this->delta_cpu_time = this->get_cpu_time() - time_cpu_ini;
+	//this->delta_cpu_time = this->get_cpu_time() - time_cpu_ini;
 	std::cout << (this->get_cpu_time() - time_cpu_ini) << "\n";
 	std::cout << (this->delta_cpu_time) << "\n\n";
 		
@@ -322,6 +325,13 @@ namespace gazebo
 		pub_iris_state.angular_velocity_covariance[4] = this->iris_state_vel[4];
 		pub_iris_state.angular_velocity_covariance[5] = this->iris_state_vel[5];
 
+		//Control Action
+		pub_iris_state.linear_acceleration_covariance[0] = this->control_action[0];
+		pub_iris_state.linear_acceleration_covariance[1] = this->control_action[1];
+		pub_iris_state.linear_acceleration_covariance[2] = this->control_action[2];
+		pub_iris_state.linear_acceleration_covariance[3] = this->control_action[3];
+
+
 
 		geometry_msgs::Quaternion pub_vel_rotor;
 
@@ -348,9 +358,9 @@ namespace gazebo
 		//Phi p
 		this->control_state_array[3] = this->iris_state_vel[3];
 		//Theta
-		this->control_state_array[4] = -this->iris_state[4];
+		this->control_state_array[4] = this->iris_state[4];
 		//Theta p
-		this->control_state_array[5] = -this->iris_state_vel[4];
+		this->control_state_array[5] = this->iris_state_vel[4];
 		//Psi
 		this->control_state_array[6] = this->iris_state[5];
 		//Psi p
@@ -363,7 +373,7 @@ namespace gazebo
 		//Reference values
 		this->control_state_array[12] = this->iris_state_ref[2];
 		this->control_state_array[13] = this->iris_state_ref[3];
-		this->control_state_array[14] = -this->iris_state_ref[4];
+		this->control_state_array[14] = this->iris_state_ref[4];
 		this->control_state_array[15] = this->iris_state_ref[5];
 	}
 
@@ -371,23 +381,24 @@ namespace gazebo
 		double trust_z = this->control_action[0] + this->iris_mass*this->gravity;
 		//std::cout << "trust z: " << trust_z << "\n";
 		
-		double vel_0_temp = (trust_z/(4*this->iris_KT) - this->control_action[1] / (4 * this->iris_KT*this->iris_ly) + this->control_action[2] / (4 * this->iris_KT*this->iris_lx) - this->control_action[3] / (4 * this->iris_KD));
+		double vel_0_temp = (trust_z/(4*this->iris_KT) - this->control_action[1]/(4*this->iris_KT*this->iris_lx) - this->control_action[2]/(4*this->iris_KT*this->iris_ly) + this->control_action[3]/(4*this->iris_KD));
 		if (vel_0_temp > 0) this->iris_rotor_vel[0] = sqrt(vel_0_temp);
 		else this->iris_rotor_vel[0] = 0;
 
-		double vel_1_temp =( trust_z/(4*this->iris_KT) + this->control_action[1]/(4*this->iris_KT*this->iris_ly) - this->control_action[2]/(4*this->iris_KT*this->iris_lx) - this->control_action[3] / (4 * this->iris_KD));
+		double vel_1_temp = (trust_z/(4*this->iris_KT) + this->control_action[1]/(4*this->iris_KT*this->iris_lx) + this->control_action[2]/(4*this->iris_KT*this->iris_ly) + this->control_action[3]/(4*this->iris_KD));
 		if (vel_1_temp > 0) this->iris_rotor_vel[1] = sqrt(vel_1_temp);
 		else this->iris_rotor_vel[1] = 0;
 
-		double vel_2_temp = (trust_z/ (4 * this->iris_KT) + this->control_action[1] / (4 * this->iris_KT*this->iris_ly) + this->control_action[2] / (4 * this->iris_KT*this->iris_lx) + this->control_action[3] / (4 * this->iris_KD));
+		double vel_2_temp = (trust_z/(4*this->iris_KT) + this->control_action[1]/(4*this->iris_KT*this->iris_lx) - this->control_action[2]/(4*this->iris_KT*this->iris_ly) - this->control_action[3]/(4*this->iris_KD));
 		if (vel_2_temp > 0) this->iris_rotor_vel[2] = sqrt(vel_2_temp);
 		else this->iris_rotor_vel[2] = 0;
 
-		double vel_3_temp = (trust_z/ (4 * this->iris_KT) - this->control_action[1] / (4 * this->iris_KT*this->iris_ly) - this->control_action[2] / (4 * this->iris_KT*this->iris_lx) + this->control_action[3] / (4 * this->iris_KD));
+		double vel_3_temp = (trust_z/(4*this->iris_KT)- this->control_action[1]/(4*this->iris_KT*this->iris_lx) + this->control_action[2]/(4*this->iris_KT*this->iris_ly) - this->control_action[3]/(4*this->iris_KD));
 		if (vel_3_temp > 0) this->iris_rotor_vel[3] = sqrt(vel_3_temp);
 		else this->iris_rotor_vel[3] = 0;
 
 		//std::cout << vel_0_temp << " " << vel_1_temp << " " << vel_2_temp << " " << vel_3_temp << "\n\n";
+		//std::cout << this->iris_rotor_vel[0] << " " << this->iris_rotor_vel[1] << " " << this->iris_rotor_vel[2] << " " << this->iris_rotor_vel[3] << "\n\n";
 
 	}
 
