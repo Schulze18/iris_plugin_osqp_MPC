@@ -33,10 +33,13 @@
 //#include "/home/schulze/iris_plugin_osqp_MPC/include/osqp.h"  
 //#include "/home/schulze/iris_plugin_osqp_MPC/include/workspace.h"  
 #include "osqp.h"
-#include "workspace_10_2_u3_vt1.h" 
-#include "interface_osqp_ros_mpc.h"
+#include "interface_osqp_ros_mpc.h" 
 //#include "matrices_mpc.h"
-#include "matrices_osqp_mpc_10_2_u3_vt1.h"
+//#include "workspace_10_2_u3_vt1.h"
+//#include "matrices_osqp_mpc_10_2_u3_vt1.h"
+#include "osqp_vt1_20_2_u3/ws_20_2_u3_vt1.h"
+#include "osqp_vt1_20_2_u3/matrices_osqp_mpc_20_2_u3_vt1.h"
+
 
 namespace gazebo
 {
@@ -71,22 +74,38 @@ namespace gazebo
 
 	/*double hue = (&workspace)->solution->x[0] ;
 	std::cout << hue << "\n\n";*/
-	std::cout << "test  \n\n";
+	//std::cout << "test  \n\n";
 	c_int flag_bounds = osqp_update_bounds(&workspace, ldata, udata);
 
 	// Store the model pointer for convenience.
-	this->model = _model;	
+	this->model = _model;
+	this->model_name = this->model->GetName();	
 	
 	// Initialize ros, if it has not already bee initialized.
 	if (!ros::isInitialized())
 	{
 	  int argc = 0;
 	  char **argv = NULL;
-	  ros::init(argc, argv, "gazebo_client", ros::init_options::NoSigintHandler);
+	  //ros::init(argc, argv, "gazebo_client", ros::init_options::NoSigintHandler);
+	  ros::init(argc, argv, this->model_name, ros::init_options::NoSigintHandler);
+	
 	}
 
 	// Create our ROS node. This acts in a similar manner to the Gazebo node
-	this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
+	//this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
+	this->rosNode.reset(new ros::NodeHandle(this->model_name));
+
+
+	// Get Plugin Parameters
+	if (_sdf->HasElement("topicState")) this->state_pub_name = _sdf->Get<std::string>("topicState");
+  	else this->state_pub_name = "iris_state";
+
+	if (_sdf->HasElement("topicCommand")) this->cmd_pub_name = _sdf->Get<std::string>("topicCommand");
+  	else this->cmd_pub_name = "vel_cmd";
+
+	if (_sdf->HasElement("topicReference")) this->ref_sub_name = _sdf->Get<std::string>("topicReference");
+  	else this->ref_sub_name = "iris_ref";
+
 
 	//Create and subscribe to a topic with Quaternion type
 	/*ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Point>(
@@ -95,9 +114,14 @@ namespace gazebo
 	*/
 
 	//Create and subscribe to a topic with Pose type	
-	ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Pose>(
+	/*ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Pose>(
 	"/" + this->model->GetName() + "/iris_ref",1,
 	boost::bind(&IrisPluginOSQPMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
+*/
+	ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Pose>(
+	"/" + this->model->GetName() + "/" + this->ref_sub_name,1,
+	boost::bind(&IrisPluginOSQPMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
+
 
 	// Store the subscriber for convenience.
 	this->rosSub = this->rosNode->subscribe(so);
@@ -106,15 +130,24 @@ namespace gazebo
 	this->rosQueueThread = std::thread(std::bind(&IrisPluginOSQPMPC::QueueThread, this));
 
 	// Create a topic to publish iris state
-	this->state_pub = this->rosNode->advertise<sensor_msgs::Imu>("iris_state", 100);
+	//this->state_pub = this->rosNode->advertise<sensor_msgs::Imu>("iris_state", 100);
+	this->state_pub = this->rosNode->advertise<sensor_msgs::Imu>(this->state_pub_name, 100);
+
+
 	// Create a topic to publish the rotors velocities 
-	this->vel_pub = this->rosNode->advertise<geometry_msgs::Quaternion>("vel_cmd", 100);
-	
+	//this->vel_pub = this->rosNode->advertise<geometry_msgs::Quaternion>("vel_cmd", 100);
+	this->vel_pub = this->rosNode->advertise<geometry_msgs::Quaternion>(this->cmd_pub_name, 100);
+
+
+
 	// Configure Timer and callback function
 	this->pubTimer = this->rosNode->createTimer(ros::Duration(0.01), &IrisPluginOSQPMPC::control_callback,this);
 	
+	// listen to the update event (broadcast every simulation iteration)
+    this->update_connection_ =
+	   event::Events::ConnectWorldUpdateBegin ( boost::bind ( &IrisPluginOSQPMPC::UpdateVelocity, this ) );
 
-	std::cout << "test  2\n\n";
+
 	}
 
     // Update the velocity applied to the Rotors
@@ -201,7 +234,7 @@ namespace gazebo
 		this->iris_state_ref[3] = msg->orientation.x;
 		this->iris_state_ref[4] = msg->orientation.y;
 		this->iris_state_ref[5] = msg->orientation.z;
-		std::cout << this->iris_state_ref[2] << " " << this->iris_state_ref[3] << " " << this->iris_state_ref[3] << " " << this->iris_state_ref[4] << "\n";
+		//std::cout << this->iris_state_ref[2] << " " << this->iris_state_ref[3] << " " << this->iris_state_ref[3] << " " << this->iris_state_ref[4] << "\n";
 	}
 
 	// ROS helper function that processes messages
@@ -260,13 +293,41 @@ namespace gazebo
 
 	// Check the flag related to the first reference command
 	if (this->flag_inicio){
+		this->tic_simu++;
+		
+		if (this->tic_simu == 1000) this->iris_state_ref[3] = 0.2;
+		else if (this->tic_simu == 1500) this->iris_state_ref[4] = 0.3;
+		else if (this->tic_simu == 2000) this->iris_state_ref[5] = -0.2;
+		else if (this->tic_simu == 2500){
+			this->iris_state_ref[3] = 0.1;
+			this->iris_state_ref[4] = 0.15;
+		}
+		else if (this->tic_simu == 3000){
+			this->iris_state_ref[3] = -0.2;
+			this->iris_state_ref[4] = 0;
+			this->iris_state_ref[5] = 0;
+		}
+		else if (this->tic_simu == 3500){
+			this->iris_state_ref[2] = 1.5;
+			this->iris_state_ref[3] = -0.3;
+		}
+		else if (this->tic_simu == 4000){
+			this->iris_state_ref[4] = 0.2;
+			this->iris_state_ref[5] = 0;
+		}
+		else if (this->tic_simu == 4500){
+			this->iris_state_ref[2] = 2; 
+			this->iris_state_ref[3] = -0.1;
+			this->iris_state_ref[4] = -0.1;
+			this->iris_state_ref[5] = 0.2;
+		}	
 
 
 		//Control MPC
 		this->control_osqp();
 
 		// Apply the new velocities
-		this->UpdateVelocity();
+		//this->UpdateVelocity();
 		this->delta_cpu_time = this->get_cpu_time() - time_cpu_ini;
 
 		// Publish the state and velocities to external analysis
@@ -288,13 +349,14 @@ namespace gazebo
 	this->old_iris_state_vel[4] = this->old_iris_state_vel[4];
 	this->old_iris_state_vel[5] = this->old_iris_state_vel[5];
 
-
+	/*
 	//ros::Time time2 = ros::Time::now();
 	std::cout << (this->get_wall_time() - time_ini) << "\n";
 	//this->delta_cpu_time = this->get_cpu_time() - time_cpu_ini;
 	std::cout << (this->get_cpu_time() - time_cpu_ini) << "\n";
 	std::cout << (this->delta_cpu_time) << "\n\n";
-		
+	*/	
+
 	}
 
 	public: void pub_data(){
@@ -302,9 +364,14 @@ namespace gazebo
 		// Create a variable to publish the state
 		sensor_msgs::Imu pub_iris_state;
 				
-
+		/*
 		ros::Time time2 = ros::Time::now();
 		pub_iris_state.header.stamp = time2;
+		*/
+		common::Time cur_time = this->model->GetWorld()->GetSimTime();
+		//pub_iris_state.header.frame_id = "base_link";
+		pub_iris_state.header.stamp.sec = cur_time.sec;
+   		pub_iris_state.header.stamp.nsec = cur_time.nsec;
 
 		// Position data
 		pub_iris_state.orientation_covariance[0] = this->iris_state[0];
@@ -378,7 +445,9 @@ namespace gazebo
 	}
 
 	public: void control_action_to_rotor_velocity() {
-		double trust_z = this->control_action[0] + this->iris_mass*this->gravity;
+		//double trust_z = this->control_action[0] + this->iris_mass*this->gravity;
+		double trust_z = (this->control_action[0] + this->iris_mass*this->gravity)/(cos(this->iris_state[3])*cos(this->iris_state[4]));
+		
 		//std::cout << "trust z: " << trust_z << "\n";
 		
 		double vel_0_temp = (trust_z/(4*this->iris_KT) - this->control_action[1]/(4*this->iris_KT*this->iris_lx) - this->control_action[2]/(4*this->iris_KT*this->iris_ly) + this->control_action[3]/(4*this->iris_KD));
@@ -460,6 +529,9 @@ namespace gazebo
 	// Pointer to the model.
 	private: physics::ModelPtr model;
 
+	// Model Name
+	private: std::string model_name;
+
 	// Pointer to the joint.
 	private: physics::JointPtr joint;
 
@@ -469,11 +541,20 @@ namespace gazebo
 	// A ROS subscriber
 	private: ros::Subscriber rosSub;
 
+	// Reference Subscriber Name
+	private: std::string ref_sub_name;
+
 	// Publisher of Iris States
 	private: ros::Publisher state_pub; 
 
+	// State Publisher Name
+	private: std::string state_pub_name;
+
 	//Publisher of Iris Volicities
 	private: ros::Publisher vel_pub;
+
+	// Vel Cmd Publisher Name
+	private: std::string cmd_pub_name;
 
 	// A ROS callbackqueue that helps process messages
 	private: ros::CallbackQueue rosQueue;
@@ -532,6 +613,12 @@ namespace gazebo
 
 	// Store the time expended by the CPU
 	private: double delta_cpu_time = 0;
+
+	// Variable to update reference
+	private: int tic_simu = 0;
+
+	// Pointer to the update event connection
+ 	private: event::ConnectionPtr update_connection_;
 
 	};
 

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<sdf version="1.5">
+
+    <model name="my_iris">
+        <include>
+	        <!--Include model from local folder-->
+            <uri>file://robots/iris_with_standoffs</uri>
+        </include>
+	    <pose>0 0 0 0 0 0</pose>
+        
+        <!-- Attach the plugin to this model -->
+        <plugin name="iris_osqp_control" filename="libiris_plugin_osqp_mpc.so"> 
+            <!-- Plugin Topics -->
+            <topicState>iris_state</topicState>
+            <topicCommand>vel_cmd</topicCommand>
+            <topicReference>iris_reference</topicReference>
+
+            <!-- Explicit Controller Files -->
+            <!--
+            <filenameBST>/control_files/vt1_10_2_u3_linux/output_bst_10_2_u3_vt1.txt</filenameBST>
+            <filenameRegions>/control_files/vt1_10_2_u3_linux/output_regions_10_2_u3_vt1.txt</filenameRegions>
+            <filenameIneq>/control_files/vt1_10_2_u3_linux/output_ineq_10_2_u3_vt1.txt </filenameIneq>
+            <filenameControlParam>/control_files/vt1_10_2_u3_linux/output_control_param_10_2_u3_vt1.txt</filenameControlParam>
+            -->
+        </plugin>                            
+    </model>
+
+</sdf>

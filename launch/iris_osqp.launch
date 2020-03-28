@@ -1,0 +1,21 @@
+<launch>
+	<env name="GAZEBO_RESOURCE_PATH" value="$(find iris_plugin_osqp_mpc)"/>
+	<!--param name="explicit_plugin_path"  value="$(find iris_plugin_explicit_mpc)"/-->
+
+
+	<!-- Start Gazebo -->
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<!-- more default parameters can be changed here -->
+        <arg name="verbose" default="true"/>
+		<arg name="paused" value="false"/>
+		<arg name="world_name" value="$(find iris_plugin_osqp_mpc)/worlds/iris.world"/>
+	</include>
+
+	<!-- Load SDF file -->
+	<!--<param name="robot_description" textfile="$(find iris_description)/robots/iris_with_standoffs/model.sdf"/-->
+	<param name="robot_description" textfile="$(find iris_plugin_osqp_mpc)/robots/iris_with_osqp.sdf"/>
+
+	<!-- Spawn a robot into Gazebo -->
+	<node name="spawn_sdf_model" pkg="gazebo_ros" type="spawn_model" args="-sdf -param robot_description -model my_iris -z 0.34"/>
+
+</launch>

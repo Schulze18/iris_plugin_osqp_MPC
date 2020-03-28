@@ -1,14 +1,51 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.3)
+project(iris_plugin_osqp_mpc)
 
-find_package(roscpp REQUIRED)
-find_package(std_msgs REQUIRED)
-include_directories(${roscpp_INCLUDE_DIRS})
-include_directories(${std_msgs_INCLUDE_DIRS})
+## Compile as C++11, supported in ROS Kinetic and newer
+# add_compile_options(-std=c++11)
 
-find_package(gazebo REQUIRED)
-include_directories(${GAZEBO_INCLUDE_DIRS})
-link_directories(${GAZEBO_LIBRARY_DIRS})
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
+  roscpp
+  rospy
+  sensor_msgs
+  std_msgs
+  gazebo
+)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if your package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES iris_plugin_osqp_mpc
+#  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs
+#  DEPENDS system_lib
+)
+
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(
+# include
+  SYSTEM
+  ${catkin_INCLUDE_DIRS}
+  ${GAZEBO_INCLUDE_DIRS}
+  ${roscpp_INCLUDE_DIRS}
+)
 
 
 # Types for QDLDL
@@ -33,6 +70,7 @@ set(QDLDL_BOOL_TYPE "unsigned char")
 # Include header directory
 # ----------------------------------------------
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 
 # Set sources
 # ----------------------------------------------
@@ -69,7 +107,8 @@ set(
     include/matrices_mpc.h
 )
 
-
 # Build our plugin
-add_library(iris_plugin_osqp_mpc SHARED src/iris_plugin_osqp_mpc.cc ${osqp_src} ${osqp_headers})
-target_link_libraries(iris_plugin_osqp_mpc ${GAZEBO_libraries} ${roscpp_LIBRARIES})
+add_library(iris_plugin_osqp_mpc SHARED src/iris_plugin_osqp_mpc.cc ${osqp_src})#${osqp_headers})
+#add_executable(iris_plugin_osqp_mpc src/iris_plugin_osqp_mpc.cc ${osqp_src})
+target_link_libraries(iris_plugin_osqp_mpc ${catkin_LIBRARIES})
+#add_dependencies(iris_plugin_osqp_mpc iris_plugin_osqp_mpc_generate_messages_cpp)
